@@ -13,7 +13,7 @@ import torch.nn.functional as F
 import numpy as np
 import argparse
 
-env = gym.make("CartPole-v1")
+env = gym.make("Qbert")
 
 # set up matplotlib
 is_ipython = 'inline' in matplotlib.get_backend()
@@ -88,7 +88,7 @@ n_observations = len(state)
 
 parser = argparse.ArgumentParser(description=None)
 parser.add_argument('--env_id', nargs='?', default='Qbert', help='Select the environment to run')
-parser.add_argument('-s', '--save', default="cartpole.pytorch", help="file to save model to", type=str)
+parser.add_argument('-s', '--save', default="qbert.pytorch", help="file to save model to", type=str)
 parser.add_argument('-l', '--load', default=None, help="file to load model from", type=str)
 
 args = parser.parse_args()

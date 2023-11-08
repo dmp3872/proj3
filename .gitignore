@@ -1,4 +1,4 @@
 /proj1
 /331_venv
-cartpole.pytorch
+*.pytorch
 /.idea
