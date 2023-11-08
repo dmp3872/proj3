@@ -81,11 +81,13 @@ n_actions = env.action_space.n
 state, info = env.reset()
 n_observations = len(state)
 
-parser = argparse.ArgumentParser(
-    prog='q-learning',
-    description='learns to play a game'
-)
+# parser = argparse.ArgumentParser(
+#     prog='q-learning',
+#     description='learns to play a game'
+# )
 
+parser = argparse.ArgumentParser(description=None)
+parser.add_argument('--env_id', nargs='?', default='Qbert', help='Select the environment to run')
 parser.add_argument('-s', '--save', default="cartpole.pytorch", help="file to save model to", type=str)
 parser.add_argument('-l', '--load', default=None, help="file to load model from", type=str)
 
@@ -198,7 +200,8 @@ def run_model(count = 100):
     """You should probably not modify this, other than
     to load qbert.
     """
-    env = gym.make("CartPole-v1", render_mode="human")
+    env = gym.make(args.env_id, render_mode="human")
+    # env = gym.make("CartPole-v1", render_mode="human")
 
     # Initialize the environment and get it's state
     state, info = env.reset()
