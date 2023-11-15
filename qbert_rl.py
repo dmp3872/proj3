@@ -242,10 +242,18 @@ def train_model():
     for i_episode in range(num_episodes):
         # Initialize the environment and get it's state
         state, info = env.reset()
+        state = cv2.cvtColor(state, cv2.COLOR_RGB2GRAY)
+        w, h = state.shape
+        state = cv2.resize(state, (w//2, h//2))
+        state = np.array(state).flatten()
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
         for t in count():
             action = select_action(state)
             observation, reward, terminated, truncated, _ = env.step(action.item())
+            observation, reward, terminated, truncated, _ = env.step(action.item())
+            observation = cv2.cvtColor(observation, cv2.COLOR_RGB2GRAY)
+            observation = cv2.resize(observation, (w//2, h//2))
+            observation = np.array(observation).flatten()
             reward = torch.tensor([reward], device=device)
             done = terminated or truncated
 
@@ -275,7 +283,7 @@ def train_model():
                 episode_durations.append(t + 1)
                 plot_durations()
                 break
-#train_model()
+train_model()
 torch.save(policy_net.state_dict(), args.save)
 
 print('Complete')
