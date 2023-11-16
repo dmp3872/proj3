@@ -15,6 +15,7 @@ import argparse
 import cv2
 
 env = gym.make("Qbert")
+env = gym.wrappers.FrameStack(env, 4)
 
 # set up matplotlib
 is_ipython = 'inline' in matplotlib.get_backend()
@@ -80,10 +81,22 @@ LR = 1e-4
 n_actions = env.action_space.n
 # Get the number of state observations
 state, info = env.reset()
-state = cv2.cvtColor(state, cv2.COLOR_RGB2GRAY)
-w, h = state.shape
-state = cv2.resize(state, (w//2, h//2))
-n_observations = len(np.array(state).flatten())
+# print(state.shape)
+
+"""code we had for single frame state"""
+# state = cv2.cvtColor(state, cv2.COLOR_RGB2GRAY)
+# w, h = state.shape
+# state = cv2.resize(state, (w//2, h//2))
+# state = np.array(state).flatten()
+
+
+for frame in state:
+    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+    w, h = frame.shape
+    frame = cv2.resize(frame, (w//2, h//2))
+state = np.array(state).flatten()
+n_observations = len(state)
+# print(n_observations)
 
 # parser = argparse.ArgumentParser(
 #     prog='q-learning',
@@ -209,17 +222,34 @@ def run_model(count = 100):
 
     # Initialize the environment and get it's state
     state, info = env.reset()
+
+    # print(state)
     state = cv2.cvtColor(state, cv2.COLOR_RGB2GRAY)
     w, h = state.shape
     state = cv2.resize(state, (w//2, h//2))
     state = np.array(state).flatten()
+
+    # for frame in state:
+    #     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+    #     w, h = frame.shape
+    #     frame = cv2.resize(frame, (w//2, h//2))
+    # state = np.array(state).flatten()
+
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
     for t in range(count):
         action = select_action(state)
         observation, reward, terminated, truncated, _ = env.step(action.item())
+
         observation = cv2.cvtColor(observation, cv2.COLOR_RGB2GRAY)
         observation = cv2.resize(observation, (w//2, h//2))
         observation = np.array(observation).flatten()
+
+        # for frame in observation:
+        #     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+        #     w, h = frame.shape
+        #     frame = cv2.resize(frame, (w//2, h//2))
+        # observation = np.array(observation).flatten()
+
         reward = torch.tensor([reward], device=device)
         done = terminated or truncated
 
@@ -235,25 +265,35 @@ def train_model():
     """ You may want to modify this method: for instance,
     you might want to skip frames during training."""
     if torch.cuda.is_available():
-        num_episodes = 600
+        print("using cuda")
+        """this was defaulted to 600"""
+        num_episodes = 100
     else:
+        print("using cpu")
         num_episodes = 200
 
     for i_episode in range(num_episodes):
         # Initialize the environment and get it's state
         state, info = env.reset()
-        state = cv2.cvtColor(state, cv2.COLOR_RGB2GRAY)
-        w, h = state.shape
-        state = cv2.resize(state, (w//2, h//2))
+
+        for frame in state:
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+            w, h = frame.shape
+            frame = cv2.resize(frame, (w//2, h//2))
         state = np.array(state).flatten()
+
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
         for t in count():
             action = select_action(state)
             observation, reward, terminated, truncated, _ = env.step(action.item())
             observation, reward, terminated, truncated, _ = env.step(action.item())
-            observation = cv2.cvtColor(observation, cv2.COLOR_RGB2GRAY)
-            observation = cv2.resize(observation, (w//2, h//2))
+
+            for frame in observation:
+                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+                w, h = frame.shape
+                frame = cv2.resize(frame, (w//2, h//2))
             observation = np.array(observation).flatten()
+
             reward = torch.tensor([reward], device=device)
             done = terminated or truncated
 
