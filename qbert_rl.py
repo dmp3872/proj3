@@ -244,7 +244,6 @@ def run_model(count = 100):
         if terminated:
             state = None
         else:
-            state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
             next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
             next_state = next_state.squeeze()
             next_state = next_state[::3, ::4, :]
@@ -262,10 +261,10 @@ def train_model():
     if torch.cuda.is_available():
         print("using cuda")
         """this was defaulted to 600"""
-        num_episodes = 100
+        num_episodes = 5
     else:
         print("using cpu")
-        num_episodes = 200
+        num_episodes = 5
 
     for i_episode in range(num_episodes):
         # Initialize the environment and get it's state
