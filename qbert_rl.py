@@ -52,8 +52,8 @@ class DQN(nn.Module):
 
     def __init__(self, n_observations, n_actions):
         super(DQN, self).__init__()
-        self.layer1 = nn.Conv2d(1, 32, 5, 4)
-        self.layer2 = nn.Conv2d(32, 64, 3, 2)
+        self.layer1 = nn.Conv2d(1, 32, 5, stride=4)
+        self.layer2 = nn.Conv2d(32, 64, 3, stride=2)
         self.flat = nn.Flatten()
         self.layer3 = nn.Linear(2048, 1000)
         self.layer4 = nn.Linear(1000, n_actions)
@@ -88,7 +88,6 @@ n_actions = env.action_space.n
 # Get the number of state observations
 state, info = env.reset()
 n_observations = state.size // 3
-print(state.size)
 
 """code we had for single frame state"""
 # state = cv2.cvtColor(state, cv2.COLOR_RGB2GRAY)
@@ -230,19 +229,12 @@ def run_model(count = 100):
     # Initialize the environment and get it's state
     state, info = env.reset()
 
-    # print(state)
-    # state = cv2.cvtColor(state, cv2.COLOR_RGB2GRAY)
-    # w, h = state.shape
-    # state = cv2.resize(state, (w//2, h//2))
-    # state = np.array(state).flatten()
-
-    # for frame in state:
-    #     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-    #     w, h = frame.shape
-    #     frame = cv2.resize(frame, (w//2, h//2))
-    # state = np.array(state).flatten()
-
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+    state = state.squeeze()
+    state = state[::3, ::4, :]
+    permutation = state.permute((2,0,1))
+    grayscale = transforms.Grayscale()(permutation)
+    state = grayscale.unsqueeze(0)
     for t in range(count):
         action = select_action(state)
         observation, reward, terminated, truncated, _ = env.step(action.item())
@@ -279,24 +271,17 @@ def train_model():
         # Initialize the environment and get it's state
         state, info = env.reset()
 
-        # for frame in state:
-        #     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-        #     w, h = frame.shape
-        #     frame = cv2.resize(frame, (w//2, h//2))
-        # state = np.array(state).flatten()
-
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+        state = state.squeeze()
+        state = state[::3, ::4, :]
+        permutation = state.permute((2,0,1))
+        grayscale = transforms.Grayscale()(permutation)
+        state = grayscale.unsqueeze(0)
         for t in count():
             action = select_action(state)
             observation, reward, terminated, truncated, _ = env.step(action.item())
             reward = torch.tensor([reward], device=device)
             done = terminated or truncated
-
-            # for frame in observation:
-            #     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-            #     w, h = frame.shape
-            #     frame = cv2.resize(frame, (w//2, h//2))
-            # observation = np.array(observation).flatten()
 
             if terminated:
                 next_state = None
@@ -330,7 +315,7 @@ def train_model():
                 plot_durations()
                 break
 train_model()
-torch.save(policy_net.state_dict(), args.save)
+# torch.save(policy_net.state_dict(), args.save)
 
 print('Complete')
 plot_durations(show_result=True)
