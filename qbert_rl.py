@@ -10,12 +10,13 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+import torchvision.transforms as transforms
 import numpy as np
 import argparse
 import cv2
 
 env = gym.make("Qbert")
-env = gym.wrappers.FrameStack(env, 4)
+# env = gym.wrappers.FrameStack(env, 4)
 
 # set up matplotlib
 is_ipython = 'inline' in matplotlib.get_backend()
@@ -51,9 +52,9 @@ class DQN(nn.Module):
 
     def __init__(self, n_observations, n_actions):
         super(DQN, self).__init__()
-        self.layer1 = nn.Linear(1, 32, 5, stride=4)
-        self.layer2 = nn.Linear(32, 64, 3, stride=2)
-        self.flat = nn.flaten()
+        self.layer1 = nn.Conv2d(1, 32, 5, 4)
+        self.layer2 = nn.Conv2d(32, 64, 3, 2)
+        self.flat = nn.Flatten()
         self.layer3 = nn.Linear(2048, 1000)
         self.layer4 = nn.Linear(1000, n_actions)
 
@@ -62,7 +63,7 @@ class DQN(nn.Module):
     def forward(self, x):
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
-        x = self.flat
+        x = self.flat(x)
         x = self.layer3(x)
         x = self.layer4(x)
         return x
@@ -87,7 +88,7 @@ n_actions = env.action_space.n
 # Get the number of state observations
 state, info = env.reset()
 n_observations = state.size // 3
-# print(state.shape)
+print(state.size)
 
 """code we had for single frame state"""
 # state = cv2.cvtColor(state, cv2.COLOR_RGB2GRAY)
@@ -230,10 +231,10 @@ def run_model(count = 100):
     state, info = env.reset()
 
     # print(state)
-    state = cv2.cvtColor(state, cv2.COLOR_RGB2GRAY)
-    w, h = state.shape
-    state = cv2.resize(state, (w//2, h//2))
-    state = np.array(state).flatten()
+    # state = cv2.cvtColor(state, cv2.COLOR_RGB2GRAY)
+    # w, h = state.shape
+    # state = cv2.resize(state, (w//2, h//2))
+    # state = np.array(state).flatten()
 
     # for frame in state:
     #     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
@@ -282,6 +283,8 @@ def train_model():
         # Initialize the environment and get it's state
         state, info = env.reset()
 
+        n_observations = state.size // 3
+
         # for frame in state:
         #     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         #     w, h = frame.shape
@@ -305,6 +308,11 @@ def train_model():
                 next_state = None
             else:
                 next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
+                next_state = next_state.squeeze()
+                next_state = next_state[::3, ::4, :]
+                permutation = next_state.permute((2,0,1))
+                grayscale = transforms.Grayscale()(permutation)
+                next_state = grayscale.unsqueeze(0)
 
             # Store the transition in memory
             memory.push(state, action, next_state, reward)
