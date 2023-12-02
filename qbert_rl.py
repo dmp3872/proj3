@@ -246,17 +246,6 @@ def run_model(count = 100):
     for t in range(count):
         action = select_action(state)
         observation, reward, terminated, truncated, _ = env.step(action.item())
-
-        observation = cv2.cvtColor(observation, cv2.COLOR_RGB2GRAY)
-        observation = cv2.resize(observation, (w//2, h//2))
-        observation = np.array(observation).flatten()
-
-        # for frame in observation:
-        #     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-        #     w, h = frame.shape
-        #     frame = cv2.resize(frame, (w//2, h//2))
-        # observation = np.array(observation).flatten()
-
         reward = torch.tensor([reward], device=device)
         done = terminated or truncated
 
@@ -264,6 +253,13 @@ def run_model(count = 100):
             state = None
         else:
             state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
+            next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
+            next_state = next_state.squeeze()
+            next_state = next_state[::3, ::4, :]
+            permutation = next_state.permute((2,0,1))
+            grayscale = transforms.Grayscale()(permutation)
+            next_state = grayscale.unsqueeze(0)
+
         env.render()
         if done:
             break
@@ -282,8 +278,6 @@ def train_model():
     for i_episode in range(num_episodes):
         # Initialize the environment and get it's state
         state, info = env.reset()
-
-        n_observations = state.size // 3
 
         # for frame in state:
         #     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
