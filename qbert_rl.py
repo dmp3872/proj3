@@ -51,17 +51,22 @@ class DQN(nn.Module):
 
     def __init__(self, n_observations, n_actions):
         super(DQN, self).__init__()
-        self.layer1 = nn.Linear(n_observations, 128)
-        self.layer2 = nn.Linear(128, 128)
-        self.layer3 = nn.Linear(128, n_actions)
+        self.layer1 = nn.Linear(1, 32, 5, stride=4)
+        self.layer2 = nn.Linear(32, 64, 3, stride=2)
+        self.flat = nn.flaten()
+        self.layer3 = nn.Linear(2048, 1000)
+        self.layer4 = nn.Linear(1000, n_actions)
 
     # Called with either one element to determine next action, or a batch
     # during optimization. Returns tensor([[left0exp,right0exp]...]).
     def forward(self, x):
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
-        return self.layer3(x)
-
+        x = self.flat
+        x = self.layer3(x)
+        x = self.layer4(x)
+        return x
+    
 # BATCH_SIZE is the number of transitions sampled from the replay buffer
 # GAMMA is the discount factor as mentioned in the previous section
 # EPS_START is the starting value of epsilon
@@ -81,6 +86,7 @@ LR = 1e-4
 n_actions = env.action_space.n
 # Get the number of state observations
 state, info = env.reset()
+n_observations = state.size // 3
 # print(state.shape)
 
 """code we had for single frame state"""
@@ -90,12 +96,12 @@ state, info = env.reset()
 # state = np.array(state).flatten()
 
 
-for frame in state:
-    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-    w, h = frame.shape
-    frame = cv2.resize(frame, (w//2, h//2))
-state = np.array(state).flatten()
-n_observations = len(state)
+# for frame in state:
+#     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+#     w, h = frame.shape
+#     frame = cv2.resize(frame, (w//2, h//2))
+# state = np.array(state).flatten()
+# n_observations = state.size // 3
 # print(n_observations)
 
 # parser = argparse.ArgumentParser(
@@ -276,26 +282,24 @@ def train_model():
         # Initialize the environment and get it's state
         state, info = env.reset()
 
-        for frame in state:
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-            w, h = frame.shape
-            frame = cv2.resize(frame, (w//2, h//2))
-        state = np.array(state).flatten()
+        # for frame in state:
+        #     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+        #     w, h = frame.shape
+        #     frame = cv2.resize(frame, (w//2, h//2))
+        # state = np.array(state).flatten()
 
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
         for t in count():
             action = select_action(state)
             observation, reward, terminated, truncated, _ = env.step(action.item())
-            observation, reward, terminated, truncated, _ = env.step(action.item())
-
-            for frame in observation:
-                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-                w, h = frame.shape
-                frame = cv2.resize(frame, (w//2, h//2))
-            observation = np.array(observation).flatten()
-
             reward = torch.tensor([reward], device=device)
             done = terminated or truncated
+
+            # for frame in observation:
+            #     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+            #     w, h = frame.shape
+            #     frame = cv2.resize(frame, (w//2, h//2))
+            # observation = np.array(observation).flatten()
 
             if terminated:
                 next_state = None
