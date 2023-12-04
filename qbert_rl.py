@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-import torchvision.transforms as transforms
+import torchvision.transforms as ts
 import numpy as np
 import argparse
 import cv2
@@ -58,9 +58,9 @@ class DQN(nn.Module):
     def __init__(self, n_observations, n_actions):
         super(DQN, self).__init__()
         # make new convolutional layers
-        self.layer1 = nn.Conv2d(1, 32, 5, stride=4)
+        self.layer1 = nn.Conv2d(1, 32, 6, stride=4)
         self.layer2 = nn.Conv2d(32, 64, 3, stride=2)
-        self.flat = nn.Flatten()
+        self.flatten = nn.Flatten()
         # make linear layers
         self.layer3 = nn.Linear(2048, 1000)
         self.layer4 = nn.Linear(1000, n_actions)
@@ -70,7 +70,7 @@ class DQN(nn.Module):
     def forward(self, x):
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
-        x = self.flat(x)
+        x = self.flatten(x)
         x = self.layer3(x)
         x = self.layer4(x)
         return x
@@ -242,7 +242,7 @@ def run_model(count = 100):
              # rearrange the sample
             permute = next_state.permute((2,0,1))
             # convert the sample to grayscale
-            grayscale = transforms.Grayscale()(permute)
+            grayscale = ts.Grayscale()(permute)
             next_state = grayscale.unsqueeze(0)
 
         env.render()
@@ -283,7 +283,7 @@ def train_model():
                 next_state = next_state.squeeze()
                 next_state = next_state[::3, ::4, :]
                 permute = next_state.permute((2,0,1))
-                grayscale = transforms.Grayscale()(permute)
+                grayscale = ts.Grayscale()(permute)
                 next_state = grayscale.unsqueeze(0)
 
             # Store the transition in memory
@@ -308,7 +308,7 @@ def train_model():
                 plot_durations()
                 break
 train_model()
-# torch.save(policy_net.state_dict(), args.save)
+torch.save(policy_net.state_dict(), args.save)
 
 print('Complete')
 plot_durations(show_result=True)
