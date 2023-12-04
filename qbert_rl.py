@@ -224,7 +224,7 @@ def run_model(count = 100):
     # rearrange the sample
     permute = state.permute((2,0,1))
     # convert the sample to grayscale
-    grayscale = transforms.Grayscale()(permute)
+    grayscale = ts.Grayscale()(permute)
     state = grayscale.unsqueeze(0)
     for t in range(count):
         action = select_action(state)
@@ -268,7 +268,7 @@ def train_model():
         state = state.squeeze()
         state = state[::3, ::4, :]
         permute = state.permute((2,0,1))
-        grayscale = transforms.Grayscale()(permute)
+        grayscale = ts.Grayscale()(permute)
         state = grayscale.unsqueeze(0)
         for t in count():
             action = select_action(state)
@@ -307,8 +307,10 @@ def train_model():
                 episode_durations.append(t + 1)
                 plot_durations()
                 break
-train_model()
-torch.save(policy_net.state_dict(), args.save)
+# train_model()
+# torch.save(policy_net.state_dict(), args.save)
+# load model
+torch.load("qbert.pytorch", args.load)
 
 print('Complete')
 plot_durations(show_result=True)
