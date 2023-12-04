@@ -58,8 +58,8 @@ class DQN(nn.Module):
     def __init__(self, n_observations, n_actions):
         super(DQN, self).__init__()
         # make new convolutional layers
-        self.layer1 = nn.Conv2d(1, 32, 6, stride=4)
-        self.layer2 = nn.Conv2d(32, 64, 2, stride=2)
+        self.layer1 = nn.Conv2d(1, 32, 5, stride=4)
+        self.layer2 = nn.Conv2d(32, 64, 3, stride=2)
         self.flat = nn.Flatten()
         # make linear layers
         self.layer3 = nn.Linear(2048, 1000)
@@ -88,13 +88,13 @@ EPS_START = 0.9
 EPS_END = 0.05
 EPS_DECAY = 1000
 TAU = 0.005
-LR = 1e-2
+LR = 1e-4
 
 # Get number of actions from gym action space
 n_actions = env.action_space.n
 # Get the number of state observations
 state, info = env.reset()
-print(state.shape)
+# print(state.shape)
 # get the oberservations for grayscale
 n_observations = state.size // 3
 
@@ -255,10 +255,10 @@ def train_model():
     if torch.cuda.is_available():
         print("using cuda")
         """this was defaulted to 600"""
-        num_episodes = 100
+        num_episodes = 5
     else:
         print("using cpu")
-        num_episodes = 100
+        num_episodes = 5
 
     for i_episode in range(num_episodes):
         # Initialize the environment and get it's state
