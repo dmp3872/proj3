@@ -268,7 +268,7 @@ def train_model():
         state = state.squeeze()
         state = state[::3, ::4, :]
         permute = state.permute((2,0,1))
-        grayscale = transforms.Grayscale()(permutation)
+        grayscale = transforms.Grayscale()(permute)
         state = grayscale.unsqueeze(0)
         for t in count():
             action = select_action(state)
