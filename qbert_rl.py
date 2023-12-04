@@ -15,8 +15,13 @@ import numpy as np
 import argparse
 import cv2
 
+"""
+Derek Pruski (dmp3872@rit.edu)
+Kellen Bell (kdb9520@rit.edu)
+qbert_rl.py
+"""
+
 env = gym.make("Qbert")
-# env = gym.wrappers.FrameStack(env, 4)
 
 # set up matplotlib
 is_ipython = 'inline' in matplotlib.get_backend()
@@ -52,9 +57,11 @@ class DQN(nn.Module):
 
     def __init__(self, n_observations, n_actions):
         super(DQN, self).__init__()
-        self.layer1 = nn.Conv2d(1, 32, 5, stride=4)
-        self.layer2 = nn.Conv2d(32, 64, 3, stride=2)
+        # make new convolutional layers
+        self.layer1 = nn.Conv2d(1, 32, 6, stride=4)
+        self.layer2 = nn.Conv2d(32, 64, 2, stride=2)
         self.flat = nn.Flatten()
+        # make linear layers
         self.layer3 = nn.Linear(2048, 1000)
         self.layer4 = nn.Linear(1000, n_actions)
 
@@ -81,33 +88,15 @@ EPS_START = 0.9
 EPS_END = 0.05
 EPS_DECAY = 1000
 TAU = 0.005
-LR = 1e-4
+LR = 1e-2
 
 # Get number of actions from gym action space
 n_actions = env.action_space.n
 # Get the number of state observations
 state, info = env.reset()
+print(state.shape)
+# get the oberservations for grayscale
 n_observations = state.size // 3
-
-"""code we had for single frame state"""
-# state = cv2.cvtColor(state, cv2.COLOR_RGB2GRAY)
-# w, h = state.shape
-# state = cv2.resize(state, (w//2, h//2))
-# state = np.array(state).flatten()
-
-
-# for frame in state:
-#     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-#     w, h = frame.shape
-#     frame = cv2.resize(frame, (w//2, h//2))
-# state = np.array(state).flatten()
-# n_observations = state.size // 3
-# print(n_observations)
-
-# parser = argparse.ArgumentParser(
-#     prog='q-learning',
-#     description='learns to play a game'
-# )
 
 parser = argparse.ArgumentParser(description=None)
 parser.add_argument('--env_id', nargs='?', default='Qbert', help='Select the environment to run')
@@ -224,16 +213,18 @@ def run_model(count = 100):
     to load qbert.
     """
     env = gym.make(args.env_id, render_mode="human")
-    # env = gym.make("CartPole-v1", render_mode="human")
 
     # Initialize the environment and get it's state
     state, info = env.reset()
 
     state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
     state = state.squeeze()
+    # make the data smaller to subsample
     state = state[::3, ::4, :]
-    permutation = state.permute((2,0,1))
-    grayscale = transforms.Grayscale()(permutation)
+    # rearrange the sample
+    permute = state.permute((2,0,1))
+    # convert the sample to grayscale
+    grayscale = transforms.Grayscale()(permute)
     state = grayscale.unsqueeze(0)
     for t in range(count):
         action = select_action(state)
@@ -246,9 +237,12 @@ def run_model(count = 100):
         else:
             next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
             next_state = next_state.squeeze()
+            # make the data smaller to subsample
             next_state = next_state[::3, ::4, :]
-            permutation = next_state.permute((2,0,1))
-            grayscale = transforms.Grayscale()(permutation)
+             # rearrange the sample
+            permute = next_state.permute((2,0,1))
+            # convert the sample to grayscale
+            grayscale = transforms.Grayscale()(permute)
             next_state = grayscale.unsqueeze(0)
 
         env.render()
@@ -261,10 +255,10 @@ def train_model():
     if torch.cuda.is_available():
         print("using cuda")
         """this was defaulted to 600"""
-        num_episodes = 5
+        num_episodes = 100
     else:
         print("using cpu")
-        num_episodes = 5
+        num_episodes = 100
 
     for i_episode in range(num_episodes):
         # Initialize the environment and get it's state
@@ -273,7 +267,7 @@ def train_model():
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
         state = state.squeeze()
         state = state[::3, ::4, :]
-        permutation = state.permute((2,0,1))
+        permute = state.permute((2,0,1))
         grayscale = transforms.Grayscale()(permutation)
         state = grayscale.unsqueeze(0)
         for t in count():
@@ -288,8 +282,8 @@ def train_model():
                 next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
                 next_state = next_state.squeeze()
                 next_state = next_state[::3, ::4, :]
-                permutation = next_state.permute((2,0,1))
-                grayscale = transforms.Grayscale()(permutation)
+                permute = next_state.permute((2,0,1))
+                grayscale = transforms.Grayscale()(permute)
                 next_state = grayscale.unsqueeze(0)
 
             # Store the transition in memory
